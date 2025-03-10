@@ -9,7 +9,8 @@ import sys
 from smart_algo import SmartAlgorithm
 #from Random_Search_with_Multiple_Grid_Refinement import random_search_with_multiple_grid_refinement
 from Initial_Generation import generate_array
-
+from Crossover_Function import segmented_crossover
+from Genetic_Algorithm import GeneticAlgorithm
 # Initializing class variables
 _C = 4184    # Water specific heat capacity (J/kgK)
 _RHO = 1000 # Water density (kg/m^3)
@@ -1179,7 +1180,6 @@ def flat_smart_week(WaterHeater_out, WaterHeater_in, time_step, tapping_initiati
 
 
 def optimization(WaterHeater, time_step, tapping_profile, load_profile1, load_profile2, initial_temperature, cutoff_temperature, hysteresis, method):
-
     # ========================== Optimization Parameters ==========================
     #initial_grid_size = 5
     #v40 = 75
@@ -1225,14 +1225,18 @@ def optimization(WaterHeater, time_step, tapping_profile, load_profile1, load_pr
         
     for iteration in range(no_iterations):
         if iteration == 0:
-            #algo = random_search_with_multiple_grid_refinement(initial_grid_size, v40, no_combinations)
-            current_comb = generate_array()
+            ga = GeneticAlgorithm(initial_pop_size=3)
+            current_comb = ga.generate_initial_population()
             print(current_comb)
             current_generational_data = pd.DataFrame(columns=['Individual', 'Efficiency'])
-        #else:
-            #current_comb = algo.grid_refinement_optimization(current_generational_data, k, refinement_factor)
-        
+        else:
+            current_generational_data.sort_values(by="Efficiency", ascending=False)
+            current_comb = ga.crossover(current_generational_data["Individual"].iloc[0], 
+                                      current_generational_data["Individual"].iloc[1])
+            print("current_comb", current_comb)
+
         for index, comb in enumerate(current_comb):
+
             _, _, Qref, Qh2o, Qtestelec, T1, T2, Tp_test, Tm_test = smart_week(
                 WaterHeater, time_step, tapping_initiation_file1, tapping_initiation_file2,
                 tapping_initiation_offday, temperature_const, heating_profiles_const, Qref_const, Qh2o_const,
